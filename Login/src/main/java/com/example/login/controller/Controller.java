@@ -5,6 +5,7 @@ import com.example.login.repository.UserRepository;
 import com.example.login.service.UserService;
 import jakarta.servlet.http.HttpSession;
 
+import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.ui.Model;
@@ -72,16 +73,16 @@ public class Controller {
                        RedirectAttributes redirectAttributes) {
 
         // try 안에 v0가 만든 코드 고치기 귀찮아서 그냥 2개 만듬. 정지 기간을 불러오는 변수
-        Optional<User> user2 = userRepository.findByUserid(userid);
-        LocalDate suspendDay= user2.get().getSuspendedUntil();
+
+
         try {
             User user = userService.authenticateUser(userid, password);
             session.setAttribute("user", user);
-
+            LocalDate suspendDay= user.getSuspendedUntil();
             if (user.getSuspendedUntil() != null && user.getSuspendedUntil().isAfter(LocalDate.now())) {
                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy년 MM월 dd일");
                 String suspendDate = user.getSuspendedUntil().format(formatter);
-                model.addAttribute("loginError", suspendDate + "까지 정지된 계정입니다.");
+                model.addAttribute("suspendError", suspendDate + "까지 정지된 계정입니다.");
                 model.addAttribute("user", new User());
                 return "index"; // index.html 또는 로그인 페이지로 다시
             }
@@ -132,4 +133,23 @@ public class Controller {
 
             return "redirect:/dashboard";
         }
+
+        // 정지 해제
+    @PostMapping("/users/unlock/{id}")
+    public String unsuspendUser(@PathVariable String id) {
+        Optional<User> user= userRepository.findByUserid(id);
+        User user2= user.get();
+        user2.setSuspendedUntil(null);
+        userRepository.save(user2);
+
+        return  "redirect:/dashboard";
+    }
+    // 유저 삭제
+    @PostMapping("/users/delete/{id}")
+    public String deleteUser(@PathVariable String id) {
+        userService.deleteUser(id);
+
+        return  "redirect:/dashboard";
+    }
+
 }

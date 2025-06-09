@@ -15,17 +15,35 @@
             padding: 2rem 0;
             margin-bottom: 2rem;
         }
-        .user-card {
+        .user-card,.post-card, .user-list {
             background: white;
             border-radius: 10px;
             box-shadow: 0 0 20px rgba(0,0,0,0.1);
             padding: 2rem;
             margin-bottom: 2rem;
         }
-        .user-list {
-            background: white;
+        .stats-card {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
             border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        .post-item {
+            border-bottom: 1px solid #eee;
+            padding: 1rem 0;
+            transition: background-color 0.2s;
+        }
+        .post-item:hover {
+            background-color: #f8f9fa;
+            cursor: pointer;
+        }
+        .post-item:last-child {
+            border-bottom: none;
+        }
+        .post-meta {
+            font-size: 0.875rem;
+            color: #6c757d;
         }
     </style>
 </head>
@@ -64,6 +82,40 @@
                 </div>
             </div>
         </div>
+        <!--게시글-->
+        <div class="post-card">
+            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">내가 작성한 게시글</h4>
+            </div>
+            <div class="card-body">
+                <!-- userposts -> 임의로 만든 게시판 테이블-->
+                <div th:if="${#lists.isEmpty(userPosts)}" class="text-center text-muted py-4">
+                    <p>작성한 게시글이 없습니다.</p>
+                    <a href="/board/write" class="btn btn-success">첫 번째 글 작성하기</a>
+                </div>
+
+                <div th:if="${!#lists.isEmpty(userPosts)}">
+                    <div th:each="post : ${userPosts}" class="post-item"
+                         th:onclick="'location.href=\'/board/' + ${post.id} + '\''"> <!-- v0가 만든 임의 주소-->
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <h5 class="mb-1" th:text="${post.title}">게시글 제목</h5>
+                                <p class="mb-1 text-muted" th:text="${#strings.abbreviate(post.content, 100)}">
+                                    게시글 내용 미리보기...
+                                </p>
+                                <div class="post-meta">
+                                    <span th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}"></span>
+                                    <span class="ms-2">조회수: <span th:text="${post.viewCount}">0</span></span>
+                                </div>
+                            </div>
+                            <div class="ms-3">
+                                <span class="badge bg-primary">내 글</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
         
         <!-- 전체 회원 목록 -->
         <div class="user-list" th:if="${user.userid=='11'}">
@@ -92,7 +144,10 @@
                                 </td>
                                 <td th:text="${member.userid}"></td>
                                 <td>
-                                    <span class="badge bg-success">활성</span>
+                                    <span th:if="${member.suspendedUntil==null}"
+                                            class="badge bg-success">활성</span>
+                                    <span th:if="${member.suspendedUntil}"
+                                          class="badge bg-secondary">비활성</span>
                                 </td>
                                 <td>
                                     <div>
@@ -135,6 +190,7 @@
     </div>
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
     <!--정지버튼-->
     <script>
         function showSuspendPrompt(userId) {
